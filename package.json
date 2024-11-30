@@ -1,0 +1,29 @@
+{
+  "name": "morpho-bot",
+  "version": "0.0.1",
+  "description": "Posting Morpho's analytics on X",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/crisog/morpho-bot.git"
+  },
+  "author": "CrisGG",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/crisog/morpho-bot/issues"
+  },
+  "homepage": "https://github.com/crisog/morpho-bot#readme",
+  "dependencies": {
+    "express": "^4.21.1",
+    "got": "^14.4.5",
+    "node-cron": "^3.0.3"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.1",
+    "@types/node-cron": "^3.0.11"
+  }
+}
