@@ -16,13 +16,18 @@ interface MorphoBlueHistoricalState {
   totalSupplyUsd: DataPoint[];
 }
 
+interface Chain {
+  id: number;
+}
+
 export interface MorphoBlueData {
+  chain: Chain;
   state: MorphoBlueState;
   historicalState: MorphoBlueHistoricalState;
 }
 
 export interface Metrics {
-  morphoBlueByAddress: MorphoBlueData;
+  morphoBlues: MorphoBlueData[];
 }
 
 export enum TimePeriod {

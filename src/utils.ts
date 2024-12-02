@@ -1,11 +1,15 @@
 import { Metrics, TimePeriod } from "./types";
 
 export function calculateMetrics(data: Metrics) {
-  const current = {
-    totalSupply: data.morphoBlueByAddress.state.totalSupplyUsd,
-    totalCollateral: data.morphoBlueByAddress.state.totalCollateralUsd,
-    totalBorrow: data.morphoBlueByAddress.state.totalBorrowUsd,
-  };
+  const current = data.morphoBlues.reduce(
+    (acc, morphoBlue) => ({
+      totalSupply: acc.totalSupply + (morphoBlue.state.totalSupplyUsd || 0),
+      totalCollateral:
+        acc.totalCollateral + (morphoBlue.state.totalCollateralUsd || 0),
+      totalBorrow: acc.totalBorrow + (morphoBlue.state.totalBorrowUsd || 0),
+    }),
+    { totalSupply: 0, totalCollateral: 0, totalBorrow: 0 }
+  );
 
   const currentMetrics = {
     tvlExclBorrows:
@@ -14,14 +18,20 @@ export function calculateMetrics(data: Metrics) {
     borrowed: current.totalBorrow,
   };
 
-  const historical = {
-    totalSupply:
-      data.morphoBlueByAddress.historicalState.totalSupplyUsd[0]?.y ?? 0,
-    totalCollateral:
-      data.morphoBlueByAddress.historicalState.totalCollateralUsd[0]?.y ?? 0,
-    totalBorrow:
-      data.morphoBlueByAddress.historicalState.totalBorrowUsd[0]?.y ?? 0,
-  };
+  const historical = data.morphoBlues.reduce(
+    (acc, morphoBlue) => ({
+      totalSupply:
+        acc.totalSupply +
+        (morphoBlue.historicalState.totalSupplyUsd[0]?.y ?? 0),
+      totalCollateral:
+        acc.totalCollateral +
+        (morphoBlue.historicalState.totalCollateralUsd[0]?.y ?? 0),
+      totalBorrow:
+        acc.totalBorrow +
+        (morphoBlue.historicalState.totalBorrowUsd[0]?.y ?? 0),
+    }),
+    { totalSupply: 0, totalCollateral: 0, totalBorrow: 0 }
+  );
 
   const lastWeekMetrics = {
     tvlExclBorrows:
@@ -34,6 +44,28 @@ export function calculateMetrics(data: Metrics) {
   return {
     current: currentMetrics,
     lastWeek: lastWeekMetrics,
+    chains: data.morphoBlues.map((morphoBlue) => ({
+      chainId: morphoBlue.chain.id,
+      current: {
+        tvlExclBorrows:
+          morphoBlue.state.totalSupplyUsd +
+          (morphoBlue.state.totalCollateralUsd -
+            morphoBlue.state.totalBorrowUsd),
+        tvlInclBorrows:
+          morphoBlue.state.totalCollateralUsd + morphoBlue.state.totalSupplyUsd,
+        borrowed: morphoBlue.state.totalBorrowUsd,
+      },
+      lastWeek: {
+        tvlExclBorrows:
+          (morphoBlue.historicalState.totalSupplyUsd[0]?.y ?? 0) +
+          ((morphoBlue.historicalState.totalCollateralUsd[0]?.y ?? 0) -
+            (morphoBlue.historicalState.totalBorrowUsd[0]?.y ?? 0)),
+        tvlInclBorrows:
+          (morphoBlue.historicalState.totalCollateralUsd[0]?.y ?? 0) +
+          (morphoBlue.historicalState.totalSupplyUsd[0]?.y ?? 0),
+        borrowed: morphoBlue.historicalState.totalBorrowUsd[0]?.y ?? 0,
+      },
+    })),
   };
 }
 
@@ -44,6 +76,7 @@ export function calculateChanges(
   direction: "up" | "down";
   percentage: number;
 } {
+  if (previous === 0) return { direction: "up", percentage: 0 };
   const change = ((current - previous) / previous) * 100;
   return {
     direction: change >= 0 ? "up" : "down",
@@ -72,10 +105,8 @@ export function formatAnalytics(data: Metrics, period: TimePeriod): string {
 
   const currentUtilization =
     (metrics.current.borrowed / metrics.current.tvlExclBorrows) * 100;
-
   const historicalUtilization =
     (metrics.lastWeek.borrowed / metrics.lastWeek.tvlExclBorrows) * 100;
-
   const utilizationChange = calculateChanges(
     currentUtilization,
     historicalUtilization
@@ -84,6 +115,26 @@ export function formatAnalytics(data: Metrics, period: TimePeriod): string {
   const dateRange = `${formatDate(
     new Date(Date.now() - period * 24 * 60 * 60 * 1000)
   )} - ${formatDate(new Date())}`;
+
+  const ethereumMetrics = metrics.chains.find(
+    (chain) => chain.chainId === 1
+  )?.current;
+  const baseMetrics = metrics.chains.find(
+    (chain) => chain.chainId === 8453
+  )?.current;
+
+  const ethereumShare = ethereumMetrics
+    ? (
+        (ethereumMetrics.tvlInclBorrows / metrics.current.tvlInclBorrows) *
+        100
+      ).toFixed(1)
+    : "0";
+  const baseShare = baseMetrics
+    ? (
+        (baseMetrics.tvlInclBorrows / metrics.current.tvlInclBorrows) *
+        100
+      ).toFixed(1)
+    : "0";
 
   const formatChangeMessage = (
     change: { direction: "up" | "down"; percentage: number },
@@ -95,12 +146,12 @@ export function formatAnalytics(data: Metrics, period: TimePeriod): string {
     } ${change.percentage.toFixed(2)}% to ${value}`;
   };
 
-  return `Morpho ${
+  return `${
     periodLabel.charAt(0) + periodLabel.slice(1).toLowerCase()
   } Analytics: ${dateRange}
-  
-Summary:
-- TVL (incl. borrows) ${formatChangeMessage(
+
+Summary:  
+- TVL ${formatChangeMessage(
     tvlInclBorrowsChange,
     formatValue(metrics.current.tvlInclBorrows)
   )}.
@@ -108,14 +159,16 @@ Summary:
     tvlExclBorrowsChange,
     formatValue(metrics.current.tvlExclBorrows)
   )}.
-- Total borrowed ${formatChangeMessage(
+- Borrowed ${formatChangeMessage(
     borrowedChange,
     formatValue(metrics.current.borrowed)
   )}.
-- Utilization rate ${formatChangeMessage(
+- Utilization ${formatChangeMessage(
     utilizationChange,
     `${currentUtilization.toFixed(2)}%`
-  )}.`;
+  )}.
+
+Ethereum: ${ethereumShare}% | Base: ${baseShare}%`;
 }
 
 export function formatValue(value: number): string {
@@ -126,7 +179,7 @@ export function formatValue(value: number): string {
 
 export function formatDate(date: Date): string {
   return date.toLocaleDateString("en-US", {
-    month: "long",
+    month: "short",
     day: "numeric",
     year: "numeric",
   });
