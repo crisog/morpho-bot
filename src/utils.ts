@@ -1,4 +1,4 @@
-import { Metrics } from "./types";
+import { Metrics, TimePeriod } from "./types";
 
 export function calculateMetrics(data: Metrics) {
   const current = {
@@ -51,8 +51,9 @@ export function calculateChanges(
   };
 }
 
-export function formatAnalytics(data: Metrics): string {
+export function formatAnalytics(data: Metrics, period: TimePeriod): string {
   const metrics = calculateMetrics(data);
+  const periodLabel = TimePeriod[period];
 
   const tvlInclBorrowsChange = calculateChanges(
     metrics.current.tvlInclBorrows,
@@ -73,10 +74,12 @@ export function formatAnalytics(data: Metrics): string {
     (metrics.current.borrowed / metrics.current.tvlExclBorrows) * 100;
 
   const dateRange = `${formatDate(
-    new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    new Date(Date.now() - period * 24 * 60 * 60 * 1000)
   )} - ${formatDate(new Date())}`;
 
-  return `*Morpho Analytics*: ${dateRange}
+  return `*Morpho ${
+    periodLabel.charAt(0) + periodLabel.slice(1).toLowerCase()
+  } Analytics*: ${dateRange}
   
 Summary:
 - TVL (incl. borrows) ${

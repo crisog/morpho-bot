@@ -24,3 +24,9 @@ export interface MorphoBlueData {
 export interface Metrics {
   morphoBlueByAddress: MorphoBlueData;
 }
+
+export enum TimePeriod {
+  DAILY = 1,
+  WEEKLY = 7,
+  MONTHLY = 30,
+}

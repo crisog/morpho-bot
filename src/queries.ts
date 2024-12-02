@@ -1,5 +1,5 @@
 import { gql, request } from "graphql-request";
-import { Metrics, MorphoBlueData } from "./types";
+import { Metrics, MorphoBlueData, TimePeriod } from "./types";
 import { formatAnalytics } from "./utils";
 
 const MORPHO_API_URL = "https://blue-api.morpho.org/graphql";
@@ -50,14 +50,16 @@ const metricsQuery = gql`
   }
 `;
 
-async function getMetrics(): Promise<Metrics> {
+async function getMetrics(
+  period: TimePeriod = TimePeriod.WEEKLY
+): Promise<Metrics> {
   const now = Math.floor(Date.now() / 1000);
-  const weekAgo = now - 7 * 24 * 60 * 60;
+  const startTime = now - period * 24 * 60 * 60;
 
   const { morphoBlueByAddress } = await request<{
     morphoBlueByAddress: MorphoBlueData;
   }>(MORPHO_API_URL, metricsQuery, {
-    startTimestamp: weekAgo,
+    startTimestamp: startTime,
     endTimestamp: now,
   });
 
@@ -66,7 +68,9 @@ async function getMetrics(): Promise<Metrics> {
   };
 }
 
-export async function getMorphoAnalytics(): Promise<string> {
-  const data = await getMetrics();
-  return formatAnalytics(data);
+export async function getMorphoAnalytics(
+  period: TimePeriod = TimePeriod.WEEKLY
+): Promise<string> {
+  const data = await getMetrics(period);
+  return formatAnalytics(data, period);
 }
