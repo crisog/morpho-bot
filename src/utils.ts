@@ -77,33 +77,40 @@ export function formatAnalytics(data: Metrics, period: TimePeriod): string {
     new Date(Date.now() - period * 24 * 60 * 60 * 1000)
   )} - ${formatDate(new Date())}`;
 
-  return `*Morpho ${
+  const formatChangeMessage = (
+    change: { direction: "up" | "down"; percentage: number },
+    value: string
+  ) => {
+    if (change.percentage === 0) return `remained at ${value}`;
+    return `${
+      change.direction === "up" ? "increased" : "decreased"
+    } ${change.percentage.toFixed(2)}% to ${value}`;
+  };
+
+  return `Morpho ${
     periodLabel.charAt(0) + periodLabel.slice(1).toLowerCase()
-  } Analytics*: ${dateRange}
+  } Analytics: ${dateRange}
   
 Summary:
-- TVL (incl. borrows) ${
-    tvlInclBorrowsChange.direction
-  } ${tvlInclBorrowsChange.percentage.toFixed(2)}% to ${formatValue(
-    metrics.current.tvlInclBorrows
+- TVL (incl. borrows) ${formatChangeMessage(
+    tvlInclBorrowsChange,
+    formatValue(metrics.current.tvlInclBorrows)
   )}.
-- TVL (excl. borrows) ${
-    tvlExclBorrowsChange.direction
-  } ${tvlExclBorrowsChange.percentage.toFixed(2)}% to ${formatValue(
-    metrics.current.tvlExclBorrows
+- TVL (excl. borrows) ${formatChangeMessage(
+    tvlExclBorrowsChange,
+    formatValue(metrics.current.tvlExclBorrows)
   )}.
-- Total borrowed ${
-    borrowedChange.direction === "up" ? "increased" : "decreased"
-  } ${borrowedChange.percentage.toFixed(1)}% to ${formatValue(
-    metrics.current.borrowed
+- Total borrowed ${formatChangeMessage(
+    borrowedChange,
+    formatValue(metrics.current.borrowed)
   )}.
 - Average utilization rate at ${utilization.toFixed(1)}%.`;
 }
 
 export function formatValue(value: number): string {
   return value >= 999.99e6
-    ? `$${(value / 1e9).toFixed(1)}B`
-    : `$${(value / 1e6).toFixed(1)}M`;
+    ? `$${(value / 1e9).toFixed(2)}B`
+    : `$${(value / 1e6).toFixed(2)}M`;
 }
 
 export function formatDate(date: Date): string {

@@ -24,7 +24,7 @@ export class XAuthServer {
       this.updateTokenState({
         access_token: process.env.ACCESS_TOKEN!,
         refresh_token: process.env.REFRESH_TOKEN!,
-        expires_in: 300, // 5 minutes
+        expires_in: 3600,
         token_type: "Bearer",
         scope: "tweet.read tweet.write users.read offline.access",
       });
