@@ -70,8 +70,16 @@ export function formatAnalytics(data: Metrics, period: TimePeriod): string {
     metrics.lastWeek.borrowed
   );
 
-  const utilization =
+  const currentUtilization =
     (metrics.current.borrowed / metrics.current.tvlExclBorrows) * 100;
+
+  const historicalUtilization =
+    (metrics.lastWeek.borrowed / metrics.lastWeek.tvlExclBorrows) * 100;
+
+  const utilizationChange = calculateChanges(
+    currentUtilization,
+    historicalUtilization
+  );
 
   const dateRange = `${formatDate(
     new Date(Date.now() - period * 24 * 60 * 60 * 1000)
@@ -104,7 +112,10 @@ Summary:
     borrowedChange,
     formatValue(metrics.current.borrowed)
   )}.
-- Average utilization rate at ${utilization.toFixed(1)}%.`;
+- Utilization rate ${formatChangeMessage(
+    utilizationChange,
+    `${currentUtilization.toFixed(2)}%`
+  )}.`;
 }
 
 export function formatValue(value: number): string {
