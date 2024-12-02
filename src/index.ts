@@ -2,6 +2,7 @@ import cron from "node-cron";
 import { XAuthServer } from "./server";
 import { XClient } from "./client";
 import { XConfig, XTokens } from "./types";
+import { getMorphoAnalytics } from "./queries";
 
 const config: XConfig = {
   clientId: process.env.CLIENT_ID!,
@@ -17,8 +18,8 @@ const authServer = new XAuthServer(config, (tokens: XTokens) => {
 authServer.start();
 
 const tweetTask = cron.schedule("*/1 * * * *", async () => {
-  console.log("running a task every 1 minute");
-  await xClient.tweet("gmorpho");
+  const analytics = await getMorphoAnalytics();
+  await xClient.tweet(analytics);
 });
 
 tweetTask.start();
