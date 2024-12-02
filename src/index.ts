@@ -1,7 +1,7 @@
 import cron from "node-cron";
-import { XAuthServer } from "./server";
-import { XClient } from "./client";
-import { XConfig, XTokens } from "./types";
+import { XAuthServer } from "./x/server";
+import { XClient } from "./x/client";
+import { XConfig, XTokens } from "./x/types";
 import { getMorphoAnalytics } from "./queries";
 
 const config: XConfig = {

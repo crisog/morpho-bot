@@ -97,7 +97,7 @@ export class XAuthServer {
       this.updateTokenState(response);
       console.log("Token refresh successful");
     } catch (error) {
-      console.error("Token refresh failed:", error);
+      console.error("Token refresh failed.");
       this.tokenState = null;
       if (this.refreshTimeout) {
         clearTimeout(this.refreshTimeout);
